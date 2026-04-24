@@ -4,6 +4,9 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+# Xóa thư mục build cũ nếu tồn tại (quan trọng để tránh lỗi CMakeCache)
+rm -rf build
+
 mkdir -p build
 cd build
 
@@ -12,4 +15,3 @@ emmake make -j$(nproc)
 
 echo "Build complete. Output in web/build/"
 echo "Run a local server with: cd build && python3 -m http.server 8080"
-
