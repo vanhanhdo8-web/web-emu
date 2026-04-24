@@ -1,6 +1,45 @@
 ﻿#include "SysDialog.h"
 
-#ifdef _WIN32
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#include <vector>
+#include <fstream>
+
+std::function<void(std::filesystem::path)> SystemDialogs::fileOpenCallback;
+std::function<void(std::filesystem::path)> SystemDialogs::fileSaveCallback;
+std::function<void(std::filesystem::path)> SystemDialogs::folderOpenCallback;
+std::function<void(std::filesystem::path)> SystemDialogs::folderSaveCallback;
+
+void SystemDialogs::OpenFileDialog(std::function<void(std::filesystem::path)> callback) {
+    fileOpenCallback = callback;
+    EM_ASM({ CasioEmuBridge.uploadFile(); });
+}
+
+void SystemDialogs::SaveFileDialog(std::string preferred_name, std::function<void(std::filesystem::path)> callback) {
+    fileSaveCallback = callback;
+    (void)preferred_name;
+    // Web save handled via download
+}
+
+void SystemDialogs::OpenFolderDialog(std::function<void(std::filesystem::path)> callback) {
+    folderOpenCallback = callback;
+    EM_ASM({ CasioEmuBridge.uploadFolder(); });
+}
+
+void SystemDialogs::SaveFolderDialog(std::function<void(std::filesystem::path)> callback) {
+    folderSaveCallback = callback;
+}
+
+extern "C" {
+    EMSCRIPTEN_KEEPALIVE
+    void web_onFileSelected(const char* path) {
+        if (SystemDialogs::fileOpenCallback) {
+            SystemDialogs::fileOpenCallback(std::filesystem::path(path));
+        }
+    }
+}
+
+#elif defined(_WIN32)
 #include <windows.h>
 #include <shobjidl.h>
 #include <filesystem>
@@ -286,6 +325,7 @@ void SystemDialogs::SaveFolderDialog(std::function<void(std::filesystem::path)> 
 
 // JNI callbacks
 extern "C" {
+#if !defined(__EMSCRIPTEN__)
     JNIEXPORT void JNICALL Java_com_tele_u8emulator_Game_onFileSelected(JNIEnv* env, jclass clazz, jstring path, jbyteArray data) {
         if (SystemDialogs::fileOpenCallback) {
             const char* cPath = env->GetStringUTFChars(path, nullptr);
@@ -367,5 +407,6 @@ extern "C" {
     JNIEXPORT void JNICALL Java_com_tele_u8emulator_Game_onImportFailed(JNIEnv* env, jclass clazz) {
         SDL_Log("Import failed");
     }
+#endif
 }
 #endif

@@ -30,9 +30,11 @@
 #endif
 
 #ifdef __ANDROID__
-
 #include <unistd.h>
+#endif
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
 #endif
 
 #include "StartupUi/StartupUi.h"
@@ -51,6 +53,14 @@ int main(int argc, char* argv[]) {
 #endif //  _WIN32
 #ifdef __ANDROID__
 	chdir(SDL_AndroidGetExternalStoragePath());
+#elif defined(__EMSCRIPTEN__)
+	EM_ASM({
+		try { FS.mkdir('/working'); } catch(e) {}
+		try { FS.mount(IDBFS, {}, '/working'); } catch(e) {}
+		FS.syncfs(true, function(err) {
+			if (err) console.error('FS sync error:', err);
+		});
+	});
 #endif
 	g_local.Load();
 
@@ -99,6 +109,7 @@ int main(int argc, char* argv[]) {
 	bool guiCreated = false;
 	auto frame_event = SDL_RegisterEvents(1);
 	bool busy = false;
+#ifndef __EMSCRIPTEN__
 	std::thread t3([&]() {
 		SDL_Event se{};
 		se.type = frame_event;
@@ -114,6 +125,7 @@ int main(int argc, char* argv[]) {
 		}
 	});
 	t3.detach();
+#endif
 #ifdef DBG
 	test_gui(&guiCreated, emulator.window, emulator.renderer);
 #endif
@@ -169,6 +181,9 @@ int main(int argc, char* argv[]) {
 #endif
 
 	while (emulator.Running()) {
+#ifdef __EMSCRIPTEN__
+		emscripten_sleep(0);
+#endif
 		SDL_Event event{};
 		busy = false;
 		if (!SDL_PollEvent(&event))

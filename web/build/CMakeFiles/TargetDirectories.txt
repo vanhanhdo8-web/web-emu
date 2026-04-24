@@ -1,0 +1,3 @@
+C:/Users/vanha/Downloads/antigravity-awesome-skills/CasioEmuAndroid/web/build/CMakeFiles/casioemu_web.dir
+C:/Users/vanha/Downloads/antigravity-awesome-skills/CasioEmuAndroid/web/build/CMakeFiles/edit_cache.dir
+C:/Users/vanha/Downloads/antigravity-awesome-skills/CasioEmuAndroid/web/build/CMakeFiles/rebuild_cache.dir
